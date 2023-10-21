@@ -15,13 +15,12 @@ const commandExit = "exit"
 const defaultTableName = "users"
 
 func executeStatement(s *statement.Statement, table *storage.Table) {
-	//fmt.Printf("%+v\n", s)
 	switch s.StatementType {
 	case statement.Insert:
 		table.Rows = append(table.Rows, s.RowToInsert)
 	case statement.Select:
 		for _, row := range table.Rows {
-			fmt.Printf("Id: %d, Username: %s, Email: %s\n", row.Id, row.Username, row.Email)
+			fmt.Printf("(%d,%s,%s)\n", row.Id, row.Username, row.Email)
 		}
 	}
 	s = nil
