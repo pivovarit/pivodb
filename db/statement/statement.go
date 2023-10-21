@@ -1,13 +1,13 @@
 package statement
 
-import "github.com/pivovarit/pivodb/db/column"
+import "github.com/pivovarit/pivodb/db/storage"
 
 const Insert = "insert"
 const Select = "select"
 
 type Statement struct {
 	StatementType Type
-	RowToInsert column.Row
+	RowToInsert   storage.Row
 }
 
 type Type string
