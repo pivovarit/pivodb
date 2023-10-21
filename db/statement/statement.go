@@ -2,7 +2,7 @@ package statement
 
 import "github.com/pivovarit/pivodb/db/storage"
 
-const Insert = "insert"
+const Insert = "insert into"
 const Select = "select"
 
 type Statement struct {
