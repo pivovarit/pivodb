@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/c-bata/go-prompt"
 	"github.com/c-bata/go-prompt/completer"
+	"github.com/pivovarit/pivodb/db"
 	"github.com/pivovarit/pivodb/db/statement"
 	"github.com/pivovarit/pivodb/db/storage"
 	"os"
@@ -12,21 +13,8 @@ import (
 )
 
 const commandExit = "exit"
-const defaultTableName = "users"
 
-func executeStatement(s *statement.Statement, table *storage.Table) {
-	switch s.StatementType {
-	case statement.Insert:
-		table.Rows = append(table.Rows, s.RowToInsert)
-	case statement.Select:
-		for _, row := range table.Rows {
-			fmt.Printf("(%d,%s,%s)\n", row.Id, row.Username, row.Email)
-		}
-	}
-	s = nil
-}
-
-var db = storage.Table{Rows: []storage.Row{}}
+var db = pivo.New()
 
 func main() {
 	fmt.Println("Please use `exit` or `Ctrl-D` to exit this program")
@@ -37,7 +25,7 @@ func main() {
 				os.Exit(0)
 			} else if strings.HasPrefix(s, statement.Insert) {
 				params := strings.Fields(s)
-				if params[2] != defaultTableName {
+				if params[2] != pivo.DefaultTableName {
 					fmt.Println("Unrecognized table name: " + params[2])
 					return
 				}
@@ -74,7 +62,7 @@ func main() {
 						Email:    email,
 					},
 				}
-				executeStatement(stmt, &db)
+				db.Execute(stmt)
 			} else if strings.HasPrefix(s, statement.Select) {
 				params := strings.Fields(s)
 				if (len(params)) != 4 {
@@ -87,13 +75,13 @@ func main() {
 					return
 				}
 
-				if params[3] != defaultTableName {
+				if params[3] != pivo.DefaultTableName {
 					fmt.Println("Unrecognized table name: " + params[3])
 					return
 				}
 
 				stmt = &statement.Statement{StatementType: statement.Select}
-				executeStatement(stmt, &db)
+				db.Execute(stmt)
 			} else {
 				fmt.Println("Unrecognized command: " + s)
 			}
