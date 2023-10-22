@@ -81,7 +81,11 @@ func main() {
 				}
 
 				stmt = &statement.Statement{StatementType: statement.Select}
-				db.Execute(stmt)
+				err := db.Execute(stmt)
+				if err != nil {
+					fmt.Println("Error: " + err.Error())
+					return
+				}
 			} else {
 				fmt.Println("Unrecognized command: " + s)
 			}
