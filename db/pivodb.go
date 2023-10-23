@@ -8,6 +8,16 @@ import (
 
 const DefaultTableName = "users"
 
+type Result struct {
+	Id       uint32
+	Username string
+	Email    string
+}
+
+func (r Result) ToString() string {
+	return fmt.Sprintf("(%d,%s,%s)", r.Id, r.Username, r.Email)
+}
+
 type DB struct {
 	Table storage.Table
 }
@@ -16,11 +26,11 @@ func New() *DB {
 	return &DB{Table: storage.Table{Pages: [storage.TableMaxPages]*storage.Page{}}}
 }
 
-func (db *DB) Execute(stmt *statement.Statement) ([]string, error) {
+func (db *DB) Execute(stmt *statement.Statement) ([]Result, error) {
 	switch stmt.StatementType {
 	case statement.Insert:
 		if db.Table.RowCount == storage.TableMaxRows {
-			return []string{}, fmt.Errorf("max row count reached: %d", storage.TableMaxRows)
+			return []Result{}, fmt.Errorf("max row count reached: %d", storage.TableMaxRows)
 		}
 		pageId := db.Table.RowCount / storage.RowsPerPage
 		page := db.resolvePage(pageId)
@@ -30,9 +40,9 @@ func (db *DB) Execute(stmt *statement.Statement) ([]string, error) {
 			Email:    stmt.RowToInsert.Email,
 		}
 		db.Table.RowCount++
-		return []string{}, nil
+		return []Result{}, nil
 	case statement.Select:
-		var results []string
+		var results []Result
 		for _, page := range db.Table.Pages {
 			if page == nil {
 				break
@@ -41,13 +51,17 @@ func (db *DB) Execute(stmt *statement.Statement) ([]string, error) {
 				if row == nil {
 					break
 				}
-				results = append(results, fmt.Sprintf("(%d,%s,%s)", row.Id, row.Username, row.Email))
+				results = append(results, Result{
+					Id:       row.Id,
+					Username: string(row.Username[:]),
+					Email:    string(row.Email[:]),
+				})
 			}
 		}
 
 		return results, nil
 	}
-	return []string{}, fmt.Errorf("unrecognized statement: %s", stmt.StatementType)
+	return []Result{}, fmt.Errorf("unrecognized statement: %s", stmt.StatementType)
 }
 
 func (db *DB) resolvePage(pageId uint32) *storage.Page {

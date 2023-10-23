@@ -30,7 +30,7 @@ func main() {
 					return
 				}
 				if (len(params)) != 6 {
-					fmt.Println("Invalid statement: '" + s + "', try: 'insert into users {id} {username} {email}" )
+					fmt.Println("Invalid statement: '" + s + "', try: 'insert into users {id} {username} {email}")
 					return
 				}
 				id, err := strconv.Atoi(params[3])
@@ -87,7 +87,7 @@ func main() {
 				stmt = &statement.Statement{StatementType: statement.Select}
 				result, err := db.Execute(stmt)
 				for _, row := range result {
-					fmt.Printf("%s\n", row)
+					fmt.Println(row.ToString())
 				}
 				if err != nil {
 					fmt.Printf("%s\n", err)
