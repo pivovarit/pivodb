@@ -14,7 +14,7 @@ type Result struct {
 	Email    string
 }
 
-func (r Result) ToString() string {
+func (r *Result) ToString() string {
 	return fmt.Sprintf("(%d,%s,%s)", r.Id, r.Username, r.Email)
 }
 
@@ -34,11 +34,12 @@ func (db *DB) Execute(stmt *statement.Statement) ([]Result, error) {
 		}
 		pageId := db.Table.RowCount / storage.RowsPerPage
 		page := db.resolvePage(pageId)
-		page.Rows[(db.Table.RowCount % storage.RowsPerPage)] = &storage.Row{
+		serialized := storage.Serialize(storage.Row{
 			Id:       stmt.RowToInsert.Id,
 			Username: stmt.RowToInsert.Username,
 			Email:    stmt.RowToInsert.Email,
-		}
+		})
+		page.Rows[(db.Table.RowCount % storage.RowsPerPage)] = &serialized
 		db.Table.RowCount++
 		return []Result{}, nil
 	case statement.SelectStatement:
@@ -47,14 +48,16 @@ func (db *DB) Execute(stmt *statement.Statement) ([]Result, error) {
 			if page == nil {
 				break
 			}
-			for _, row := range page.Rows {
-				if row == nil {
+			for _, serializedRow := range page.Rows {
+				if serializedRow == nil {
 					break
 				}
+
+				row := storage.Deserialize(serializedRow)
 				results = append(results, Result{
 					Id:       row.Id,
-					Username: string(row.Username[:]),
-					Email:    string(row.Email[:]),
+					Username: row.Username,
+					Email:    row.Email,
 				})
 			}
 		}
@@ -68,7 +71,7 @@ func (db *DB) resolvePage(pageId uint32) *storage.Page {
 	page := db.Table.Pages[pageId]
 	if page == nil {
 		db.Table.PageCount++
-		db.Table.Pages[pageId] = &storage.Page{Rows: [storage.RowsPerPage]*storage.Row{}}
+		db.Table.Pages[pageId] = &storage.Page{Rows: [storage.RowsPerPage]*storage.SerializedRow{}}
 		page = db.Table.Pages[pageId]
 	}
 	return page
