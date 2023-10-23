@@ -28,7 +28,7 @@ func New() *DB {
 
 func (db *DB) Execute(stmt *statement.Statement) ([]Result, error) {
 	switch stmt.StatementType {
-	case statement.Insert:
+	case statement.InsertStatement:
 		if db.Table.RowCount == storage.TableMaxRows {
 			return []Result{}, fmt.Errorf("max row count reached: %d", storage.TableMaxRows)
 		}
@@ -41,7 +41,7 @@ func (db *DB) Execute(stmt *statement.Statement) ([]Result, error) {
 		}
 		db.Table.RowCount++
 		return []Result{}, nil
-	case statement.Select:
+	case statement.SelectStatement:
 		var results []Result
 		for _, page := range db.Table.Pages {
 			if page == nil {

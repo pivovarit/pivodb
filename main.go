@@ -23,7 +23,7 @@ func main() {
 		func(s string) {
 			if s == commandExit {
 				os.Exit(0)
-			} else if strings.HasPrefix(s, statement.Insert) {
+			} else if strings.HasPrefix(s, statement.InsertStatement) {
 				params := strings.Fields(s)
 				if params[2] != pivo.DefaultTableName {
 					fmt.Println("Unrecognized table name: " + params[2])
@@ -54,20 +54,17 @@ func main() {
 				var username [storage.UsernameSize]byte
 				copy(username[:], params[4])
 
-				stmt = &statement.Statement{
-					StatementType: statement.Insert,
-					RowToInsert: storage.Row{
-						Id:       uint32(id),
-						Username: username,
-						Email:    email,
-					},
-				}
+				stmt = statement.Insert(storage.Row{
+					Id:       uint32(id),
+					Username: username,
+					Email:    email,
+				})
 				_, err = db.Execute(stmt)
 				if err != nil {
 					fmt.Printf("%s\n", err)
 					return
 				}
-			} else if strings.HasPrefix(s, statement.Select) {
+			} else if strings.HasPrefix(s, statement.SelectStatement) {
 				params := strings.Fields(s)
 				if (len(params)) != 4 {
 					fmt.Println("Invalid statement: '" + s + "', try: 'select * from users")
@@ -84,7 +81,7 @@ func main() {
 					return
 				}
 
-				stmt = &statement.Statement{StatementType: statement.Select}
+				stmt = statement.Select()
 				result, err := db.Execute(stmt)
 				for _, row := range result {
 					fmt.Println(row.ToString())
@@ -102,10 +99,10 @@ func main() {
 					Text:        commandExit,
 					Description: "Exit PivoDB"},
 				{
-					Text:        statement.Select,
+					Text:        statement.SelectStatement,
 					Description: "SELECT SQL statement"},
 				{
-					Text:        statement.Insert,
+					Text:        statement.InsertStatement,
 					Description: "INSERT SQL statement"},
 			}
 			return prompt.FilterHasPrefix(s, document.GetWordBeforeCursor(), true)

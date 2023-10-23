@@ -2,8 +2,8 @@ package statement
 
 import "github.com/pivovarit/pivodb/db/storage"
 
-const Insert = "insert into"
-const Select = "select"
+const InsertStatement = "insert into"
+const SelectStatement = "select"
 
 type Statement struct {
 	StatementType Type
@@ -11,3 +11,16 @@ type Statement struct {
 }
 
 type Type string
+
+func Insert(row storage.Row) *Statement {
+	return &Statement{
+		StatementType: InsertStatement,
+		RowToInsert:   row,
+	}
+}
+
+func Select() *Statement {
+	return &Statement{
+		StatementType: SelectStatement,
+	}
+}
