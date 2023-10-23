@@ -23,7 +23,7 @@ func main() {
 		func(s string) {
 			if s == commandExit {
 				os.Exit(0)
-			} else if strings.HasPrefix(s, statement.InsertStatement) {
+			} else if strings.HasPrefix(s, statement.InsertStatement.Value()) {
 				params := strings.Fields(s)
 				if params[2] != pivo.DefaultTableName {
 					fmt.Println("Unrecognized table name: " + params[2])
@@ -64,7 +64,7 @@ func main() {
 					fmt.Printf("%s\n", err)
 					return
 				}
-			} else if strings.HasPrefix(s, statement.SelectStatement) {
+			} else if strings.HasPrefix(s, statement.SelectStatement.Value()) {
 				params := strings.Fields(s)
 				if (len(params)) != 4 {
 					fmt.Println("Invalid statement: '" + s + "', try: 'select * from users")
@@ -99,10 +99,10 @@ func main() {
 					Text:        commandExit,
 					Description: "Exit PivoDB"},
 				{
-					Text:        statement.SelectStatement,
+					Text:        statement.SelectStatement.Value(),
 					Description: "SELECT SQL statement"},
 				{
-					Text:        statement.InsertStatement,
+					Text:        statement.InsertStatement.Value(),
 					Description: "INSERT SQL statement"},
 			}
 			return prompt.FilterHasPrefix(s, document.GetWordBeforeCursor(), true)
