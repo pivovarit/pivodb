@@ -2,15 +2,21 @@ package statement
 
 import "github.com/pivovarit/pivodb/db/storage"
 
-const InsertStatement = "insert into"
-const SelectStatement = "select"
+type Type string
+
+const (
+	InsertStatement Type = "insert into"
+	SelectStatement Type = "select"
+)
+
+func (t Type) Value() string {
+	return string(t)
+}
 
 type Statement struct {
 	StatementType Type
 	RowToInsert   storage.Row
 }
-
-type Type string
 
 func Insert(row storage.Row) *Statement {
 	return &Statement{
