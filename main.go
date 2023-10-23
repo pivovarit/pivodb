@@ -62,7 +62,11 @@ func main() {
 						Email:    email,
 					},
 				}
-				db.Execute(stmt)
+				_, err = db.Execute(stmt)
+				if err != nil {
+					fmt.Printf("%s\n", err)
+					return
+				}
 			} else if strings.HasPrefix(s, statement.Select) {
 				params := strings.Fields(s)
 				if (len(params)) != 4 {
@@ -81,10 +85,12 @@ func main() {
 				}
 
 				stmt = &statement.Statement{StatementType: statement.Select}
-				err := db.Execute(stmt)
+				result, err := db.Execute(stmt)
+				for _, row := range result {
+					fmt.Printf("%s\n", row)
+				}
 				if err != nil {
-					fmt.Println("Error: " + err.Error())
-					return
+					fmt.Printf("%s\n", err)
 				}
 			} else {
 				fmt.Println("Unrecognized command: " + s)
