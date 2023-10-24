@@ -71,7 +71,7 @@ func TestInsertDB(t *testing.T) {
 
 	var user = result[0]
 
-	if user.Id != uint32(id) || user.Email != string(email[:]) || user.Username != string(username[:]) {
+	if user.Id != uint32(id) || user.Email != email || user.Username != username {
 		t.Errorf("got: %s, expected: %d, %s, and %s", user.ToString(), id, username, email)
 	}
 }
