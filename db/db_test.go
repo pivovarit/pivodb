@@ -98,6 +98,56 @@ func TestInsertDB(t *testing.T) {
 	}
 }
 
+func TestMultipleTableInsert(t *testing.T) {
+	db := New()
+	table1 := "users1"
+	table2 := "users2"
+
+	username1 := "pivovarit1"
+	email1 := "foo1@bar.com"
+
+	username2 := "pivovarit2"
+	email2 := "foo2@bar.com"
+
+	_, _ = db.Execute(statement.CreateTable(table1))
+	_, _ = db.Execute(statement.CreateTable(table2))
+
+	_, err1 := db.Execute(statement.Insert(storage.Row{
+		Id:       uint32(1),
+		Username: username1,
+		Email:    email1,
+	}, table1))
+
+	failOnError(err1, t)
+
+	_, err2 := db.Execute(statement.Insert(storage.Row{
+		Id:       uint32(1),
+		Username: username2,
+		Email:    email2,
+	}, table2))
+
+	failOnError(err2, t)
+
+	r1, _ := db.Execute(statement.Select(table1))
+	r2, _ := db.Execute(statement.Select(table2))
+
+	if len(r1) != 1 {
+		t.Errorf("expected %s to have 1 row, actual: %d", table1, len(r1))
+	}
+
+	if r1[0].Id != 1 || r1[0].Email != email1 || r1[0].Username != username1 {
+		t.Errorf("got: %s, expected: %d, %s, and %s", r1[0].ToString(), 1, username1, email1)
+	}
+
+	if len(r2) != 1 {
+		t.Errorf("expected %s to have 1 row, actual: %d", table2, len(r2))
+	}
+
+	if r2[0].Id != 1 || r2[0].Email != email2 || r2[0].Username != username2 {
+		t.Errorf("got: %s, expected: %d, %s, and %s", r2[0].ToString(), 1, username2, email2)
+	}
+}
+
 func TestInsertMultiplePages(t *testing.T) {
 	db := New()
 	table := "users"
