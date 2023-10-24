@@ -2,8 +2,6 @@ package storage
 
 import "github.com/pivovarit/pivodb/db/serializer"
 
-const TableName = "users"
-
 const (
 	PageSize      = 4096
 	TableMaxPages = 100
