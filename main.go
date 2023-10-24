@@ -38,21 +38,19 @@ func main() {
 					fmt.Printf("Id: [%s] needs to be numeric\n", params[3])
 				}
 
-				if len(params[5]) > storage.EmailSize {
+				if len(params[5]) >= storage.EmailSize {
 					fmt.Println("Exceeded length for email column")
 					return
 				}
 
-				var email [storage.EmailSize]byte
-				copy(email[:], params[5])
+				email := params[5]
 
-				if len(params[4]) > storage.UsernameSize {
+				if len(params[4]) >= storage.UsernameSize {
 					fmt.Println("Exceeded length for username column")
 					return
 				}
 
-				var username [storage.UsernameSize]byte
-				copy(username[:], params[4])
+				username := params[4]
 
 				stmt = statement.Insert(storage.Row{
 					Id:       uint32(id),

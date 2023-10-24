@@ -1,6 +1,7 @@
 package pivo
 
 import (
+	"fmt"
 	"github.com/pivovarit/pivodb/db/statement"
 	"github.com/pivovarit/pivodb/db/storage"
 	"strings"
@@ -22,11 +23,8 @@ func TestEmptyDB(t *testing.T) {
 func TestErrorOnFullDB(t *testing.T) {
 	db := New()
 
-	var username [storage.UsernameSize]byte
-	copy(username[:], "pivovarit")
-
-	var email [storage.EmailSize]byte
-	copy(email[:], "foo@bar.com")
+	username := "pivovarit"
+	email := "foo@bar.com"
 
 	for i := 0; i < storage.TableMaxRows; i++ {
 		_, _ = db.Execute(statement.Insert(storage.Row{
@@ -53,13 +51,9 @@ func TestErrorOnFullDB(t *testing.T) {
 func TestInsertDB(t *testing.T) {
 	db := New()
 
-	var id = 1
-
-	var username [storage.UsernameSize]byte
-	copy(username[:], "pivovarit")
-
-	var email [storage.EmailSize]byte
-	copy(email[:], "foo@bar.com")
+	id := 1
+	username := "pivovarit"
+	email := "foo@bar.com"
 
 	_, _ = db.Execute(statement.Insert(storage.Row{
 		Id:       uint32(id),
@@ -85,11 +79,8 @@ func TestInsertDB(t *testing.T) {
 func TestInsertMultiplePages(t *testing.T) {
 	db := New()
 
-	var username [storage.UsernameSize]byte
-	copy(username[:], "pivovarit")
-
-	var email [storage.EmailSize]byte
-	copy(email[:], "foo@bar.com")
+	username := "pivovarit"
+	email := "foo@bar.com"
 
 	for i := 0; i < storage.TableMaxRows; i++ {
 		_, _ = db.Execute(statement.Insert(storage.Row{
@@ -104,8 +95,12 @@ func TestInsertMultiplePages(t *testing.T) {
 	failOnError(err, t)
 
 	for idx, r := range results {
-		if r.Id != uint32(idx) || r.Email != string(email[:]) || r.Username != string(username[:]) {
+		if r.Id != uint32(idx) || r.Email != email || r.Username != username {
+			fmt.Printf("[%d][%d][equal: %t]\n", r.Id, uint32(idx), r.Id == uint32(idx))
+			fmt.Printf("[%s][%s][equal: %t]\n", r.Email, email, r.Email == email)
+			fmt.Printf("[%s][%s][equal: %t]\n", r.Username, username, r.Username == username)
 			t.Errorf("got: %s, expected: %d, %s, and %s", r.ToString(), idx, username, email)
+			break
 		}
 	}
 }
