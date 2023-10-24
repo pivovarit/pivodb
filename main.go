@@ -36,14 +36,14 @@ func main() {
 					fmt.Printf("Id: [%s] needs to be numeric\n", params[3])
 				}
 
-				if len(params[5]) >= storage.EmailSize {
+				if len(params[5]) > storage.EmailSize {
 					fmt.Println("Exceeded length for email column")
 					return
 				}
 
 				email := params[5]
 
-				if len(params[4]) >= storage.UsernameSize {
+				if len(params[4]) > storage.UsernameSize {
 					fmt.Println("Exceeded length for username column")
 					return
 				}

@@ -3,7 +3,7 @@ package serializer
 import "bytes"
 
 func WriteString(v string) []byte {
-	return []byte(v + "\000")
+	return []byte(v)
 }
 
 func ReadString(v []byte) string {
