@@ -25,14 +25,12 @@ func main() {
 				os.Exit(0)
 			} else if strings.HasPrefix(s, statement.InsertStatement.Value()) {
 				params := strings.Fields(s)
-				if params[2] != pivo.DefaultTableName {
-					fmt.Println("Unrecognized table name: " + params[2])
-					return
-				}
 				if (len(params)) != 6 {
 					fmt.Println("Invalid statement: '" + s + "', try: 'insert into users {id} {username} {email}")
 					return
 				}
+
+				tableName := params[2]
 				id, err := strconv.Atoi(params[3])
 				if err != nil {
 					fmt.Printf("Id: [%s] needs to be numeric\n", params[3])
@@ -56,7 +54,7 @@ func main() {
 					Id:       uint32(id),
 					Username: username,
 					Email:    email,
-				})
+				}, tableName)
 				_, err = db.Execute(stmt)
 				if err != nil {
 					fmt.Printf("%s\n", err)
@@ -65,25 +63,35 @@ func main() {
 			} else if strings.HasPrefix(s, statement.SelectStatement.Value()) {
 				params := strings.Fields(s)
 				if (len(params)) != 4 {
-					fmt.Println("Invalid statement: '" + s + "', try: 'select * from users")
+					fmt.Println("Invalid statement: '" + s + "', try: 'select * from <table>")
 					return
 				}
+
+				tableName := params[3]
 
 				if params[1] != "*" || params[2] != "from" {
-					fmt.Println("Invalid statement: '" + s + "', try: 'select * from users")
+					fmt.Println("Invalid statement: '" + s + "', try: 'select * from <table>")
 					return
 				}
 
-				if params[3] != pivo.DefaultTableName {
-					fmt.Println("Unrecognized table name: " + params[3])
-					return
-				}
-
-				stmt = statement.Select()
+				stmt = statement.Select(tableName)
 				result, err := db.Execute(stmt)
 				for _, row := range result {
 					fmt.Println(row.ToString())
 				}
+				if err != nil {
+					fmt.Printf("%s\n", err)
+				}
+			} else if strings.HasPrefix(s, statement.CreateTableStatement.Value()) {
+				params := strings.Fields(s)
+				if (len(params)) != 3 {
+					fmt.Println("Invalid statement: '" + s + "', try: 'create table <table>")
+					return
+				}
+
+				tableName := params[2]
+				stmt = statement.CreateTable(tableName)
+				_, err := db.Execute(stmt)
 				if err != nil {
 					fmt.Printf("%s\n", err)
 				}

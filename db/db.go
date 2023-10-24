@@ -6,8 +6,6 @@ import (
 	"github.com/pivovarit/pivodb/db/storage"
 )
 
-const DefaultTableName = "users"
-
 type Result struct {
 	Id       uint32
 	Username string
@@ -19,32 +17,48 @@ func (r *Result) ToString() string {
 }
 
 type DB struct {
-	Table storage.Table
+	Tables map[string]*storage.Table
 }
 
 func New() *DB {
-	return &DB{Table: storage.Table{Pages: [storage.TableMaxPages]*storage.Page{}}}
+	return &DB{Tables: map[string]*storage.Table{}}
 }
 
 func (db *DB) Execute(stmt *statement.Statement) ([]Result, error) {
 	switch stmt.StatementType {
+	case statement.CreateTableStatement:
+		if db.Tables[stmt.TableName] != nil {
+			return []Result{}, fmt.Errorf("table [%s] already exists", stmt.TableName)
+		}
+
+		db.Tables[stmt.TableName] = &storage.Table{Pages: [storage.TableMaxPages]*storage.Page{}}
+		return []Result{}, nil
 	case statement.InsertStatement:
-		if db.Table.RowCount == storage.TableMaxRows {
+		table := db.Tables[stmt.TableName]
+		if table == nil {
+			return []Result{}, fmt.Errorf("table [%s] does not exist", stmt.TableName)
+		}
+
+		if db.Tables[stmt.TableName].RowCount == storage.TableMaxRows {
 			return []Result{}, fmt.Errorf("max row count reached: %d", storage.TableMaxRows)
 		}
-		pageId := db.Table.RowCount / storage.RowsPerPage
-		page := db.resolvePage(pageId)
+		pageId := table.RowCount / storage.RowsPerPage
+		page := db.resolvePage(pageId, table)
 		serialized := storage.Serialize(storage.Row{
 			Id:       stmt.RowToInsert.Id,
 			Username: stmt.RowToInsert.Username,
 			Email:    stmt.RowToInsert.Email,
 		})
-		page.Rows[(db.Table.RowCount % storage.RowsPerPage)] = &serialized
-		db.Table.RowCount++
+		page.Rows[(table.RowCount % storage.RowsPerPage)] = &serialized
+		table.RowCount++
 		return []Result{}, nil
 	case statement.SelectStatement:
+		table := db.Tables[stmt.TableName]
+		if table == nil {
+			return []Result{}, fmt.Errorf("table [%s] does not exist", stmt.TableName)
+		}
 		var results []Result
-		for _, page := range db.Table.Pages {
+		for _, page := range table.Pages {
 			if page == nil {
 				break
 			}
@@ -67,12 +81,12 @@ func (db *DB) Execute(stmt *statement.Statement) ([]Result, error) {
 	return []Result{}, fmt.Errorf("unrecognized statement: %s", stmt.StatementType)
 }
 
-func (db *DB) resolvePage(pageId uint32) *storage.Page {
-	page := db.Table.Pages[pageId]
+func (db *DB) resolvePage(pageId uint32, table *storage.Table) *storage.Page {
+	page := table.Pages[pageId]
 	if page == nil {
-		db.Table.PageCount++
-		db.Table.Pages[pageId] = &storage.Page{Rows: [storage.RowsPerPage]*storage.SerializedRow{}}
-		page = db.Table.Pages[pageId]
+		table.PageCount++
+		table.Pages[pageId] = &storage.Page{Rows: [storage.RowsPerPage]*storage.SerializedRow{}}
+		page = table.Pages[pageId]
 	}
 	return page
 }

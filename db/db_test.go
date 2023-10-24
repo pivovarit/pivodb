@@ -8,11 +8,30 @@ import (
 	"testing"
 )
 
+func TestNoTable(t *testing.T) {
+	db := New()
+	table := "42"
+
+	_, err := db.Execute(statement.Select(table))
+
+	if err == nil {
+		t.Errorf("expected 'table [%s] does not exist' error", table)
+	}
+
+	expected := fmt.Sprintf("table [%s] does not exist", table)
+	if expected != err.Error() {
+		t.Errorf("Expected '%s', got: %s", expected, err.Error())
+	}
+}
+
 func TestEmptyDB(t *testing.T) {
 	db := New()
+	table := "users"
 
-	results, err := db.Execute(statement.Select())
+	_, err := db.Execute(statement.CreateTable(table))
+	failOnError(err, t)
 
+	results, err := db.Execute(statement.Select(table))
 	failOnError(err, t)
 
 	if len(results) != 0 {
@@ -22,22 +41,24 @@ func TestEmptyDB(t *testing.T) {
 
 func TestErrorOnFullDB(t *testing.T) {
 	db := New()
+	table := "users"
 
 	username := "pivovarit"
 	email := "foo@bar.com"
 
+	_, _ = db.Execute(statement.CreateTable(table))
 	for i := 0; i < storage.TableMaxRows; i++ {
 		_, _ = db.Execute(statement.Insert(storage.Row{
 			Id:       uint32(i),
 			Username: username,
 			Email:    email,
-		}))
+		}, table))
 	}
 	_, err := db.Execute(statement.Insert(storage.Row{
 		Id:       uint32(storage.TableMaxRows),
 		Username: username,
 		Email:    email,
-	}))
+	}, table))
 
 	if err == nil {
 		t.Error("Expected 'max row count reached'")
@@ -50,18 +71,19 @@ func TestErrorOnFullDB(t *testing.T) {
 
 func TestInsertDB(t *testing.T) {
 	db := New()
-
+	table := "users"
 	id := 1
 	username := "pivovarit"
 	email := "foo@bar.com"
 
+	_, _ = db.Execute(statement.CreateTable(table))
 	_, _ = db.Execute(statement.Insert(storage.Row{
 		Id:       uint32(id),
 		Username: username,
 		Email:    email,
-	}))
+	}, table))
 
-	result, err := db.Execute(statement.Select())
+	result, err := db.Execute(statement.Select(table))
 
 	failOnError(err, t)
 
@@ -78,19 +100,21 @@ func TestInsertDB(t *testing.T) {
 
 func TestInsertMultiplePages(t *testing.T) {
 	db := New()
+	table := "users"
 
 	username := "pivovarit"
 	email := "foo@bar.com"
 
+	_, _ = db.Execute(statement.CreateTable(table))
 	for i := 0; i < storage.TableMaxRows; i++ {
 		_, _ = db.Execute(statement.Insert(storage.Row{
 			Id:       uint32(i),
 			Username: username,
 			Email:    email,
-		}))
+		}, table))
 	}
 
-	results, err := db.Execute(statement.Select())
+	results, err := db.Execute(statement.Select(table))
 
 	failOnError(err, t)
 
