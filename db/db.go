@@ -47,11 +47,12 @@ func (db *DB) Execute(stmt *statement.Statement) ([]Result, error) {
 		if db.Tables[stmt.TableName].RowCount == storage.TableMaxRows {
 			return []Result{}, fmt.Errorf("max row count reached: %d", storage.TableMaxRows)
 		}
-		err := table.Pager.Save(storage.Serialize(storage.Row{
+		endOfTable := storage.EndOf(table)
+		err := table.Pager.SaveAt(storage.Serialize(storage.Row{
 			Id:       stmt.RowToInsert.Id,
 			Username: stmt.RowToInsert.Username,
 			Email:    stmt.RowToInsert.Email,
-		}))
+		}), endOfTable)
 		if err != nil {
 			return []Result{}, fmt.Errorf("could not insert: %s", err)
 		}
