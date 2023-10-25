@@ -10,10 +10,12 @@ type Result struct {
 	Id       uint32
 	Username string
 	Email    string
+	PageId   uint32
+	RowId    uint32
 }
 
 func (r *Result) ToString() string {
-	return fmt.Sprintf("(%d,%s,%s)", r.Id, r.Username, r.Email)
+	return fmt.Sprintf("(%d,%s,%s) [rowId: %d, pageId: %d]", r.Id, r.Username, r.Email, r.RowId, r.PageId)
 }
 
 type DB struct {
@@ -24,6 +26,9 @@ func New() *DB {
 	return &DB{Tables: map[string]*storage.Table{}}
 }
 
+func (db *DB) Close() {
+}
+
 func (db *DB) Execute(stmt *statement.Statement) ([]Result, error) {
 	switch stmt.StatementType {
 	case statement.CreateTableStatement:
@@ -31,7 +36,7 @@ func (db *DB) Execute(stmt *statement.Statement) ([]Result, error) {
 			return []Result{}, fmt.Errorf("table [%s] already exists", stmt.TableName)
 		}
 
-		db.Tables[stmt.TableName] = storage.NewTable()
+		db.Tables[stmt.TableName] = storage.NewTable(stmt.TableName)
 		return []Result{}, nil
 	case statement.InsertStatement:
 		table := db.Tables[stmt.TableName]
@@ -42,14 +47,14 @@ func (db *DB) Execute(stmt *statement.Statement) ([]Result, error) {
 		if db.Tables[stmt.TableName].RowCount == storage.TableMaxRows {
 			return []Result{}, fmt.Errorf("max row count reached: %d", storage.TableMaxRows)
 		}
-		pageId := table.RowCount / storage.RowsPerPage
-		page := table.Pager.ResolvePage(pageId)
-		serialized := storage.Serialize(storage.Row{
+		err := table.Pager.Save(storage.Serialize(storage.Row{
 			Id:       stmt.RowToInsert.Id,
 			Username: stmt.RowToInsert.Username,
 			Email:    stmt.RowToInsert.Email,
-		})
-		page.Rows[(table.RowCount % storage.RowsPerPage)] = &serialized
+		}))
+		if err != nil {
+			return []Result{}, fmt.Errorf("could not insert: %s", err)
+		}
 		table.RowCount++
 		return []Result{}, nil
 	case statement.SelectStatement:
@@ -57,12 +62,13 @@ func (db *DB) Execute(stmt *statement.Statement) ([]Result, error) {
 		if table == nil {
 			return []Result{}, fmt.Errorf("table [%s] does not exist", stmt.TableName)
 		}
+
 		var results []Result
-		for _, page := range table.Pager.GetPages() {
+		for pageId, page := range table.Pager.GetPages() {
 			if page == nil {
 				break
 			}
-			for _, serializedRow := range page.Rows {
+			for rowId, serializedRow := range page.Rows {
 				if serializedRow == nil {
 					break
 				}
@@ -72,11 +78,17 @@ func (db *DB) Execute(stmt *statement.Statement) ([]Result, error) {
 					Id:       row.Id,
 					Username: row.Username,
 					Email:    row.Email,
+					PageId:   uint32(pageId),
+					RowId:    uint32((pageId * storage.RowsPerPage) + rowId),
 				})
 			}
 		}
 
-		return results, nil
+		return results[:table.RowCount], nil
 	}
 	return []Result{}, fmt.Errorf("unrecognized statement: %s", stmt.StatementType)
+}
+
+func (db *DB) pageId(rowId uint32) uint32 {
+	return rowId % storage.RowsPerPage
 }

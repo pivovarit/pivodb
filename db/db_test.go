@@ -4,13 +4,17 @@ import (
 	"fmt"
 	"github.com/pivovarit/pivodb/db/statement"
 	"github.com/pivovarit/pivodb/db/storage"
+	"log"
+	"math/rand"
+	"os"
+	"strconv"
 	"strings"
 	"testing"
 )
 
 func TestNoTable(t *testing.T) {
-	db := New()
-	table := "42"
+	db := newDB(t)
+	table := randomTableName()
 
 	_, err := db.Execute(statement.Select(table))
 
@@ -25,8 +29,8 @@ func TestNoTable(t *testing.T) {
 }
 
 func TestEmptyDB(t *testing.T) {
-	db := New()
-	table := "users"
+	db := newDB(t)
+	table := randomTableName()
 
 	_, err := db.Execute(statement.CreateTable(table))
 	failOnError(err, t)
@@ -40,8 +44,8 @@ func TestEmptyDB(t *testing.T) {
 }
 
 func TestErrorOnFullDB(t *testing.T) {
-	db := New()
-	table := "users"
+	db := newDB(t)
+	table := randomTableName()
 
 	username := "pivovarit"
 	email := "foo@bar.com"
@@ -69,9 +73,41 @@ func TestErrorOnFullDB(t *testing.T) {
 	}
 }
 
-func TestInsertDB(t *testing.T) {
+func TestPersistence(t *testing.T) {
 	db := New()
-	table := "users"
+	table := randomTableName()
+	id := 1
+	username := "pivovarit"
+	email := "foo@bar.com"
+
+	_, _ = db.Execute(statement.CreateTable(table))
+	_, _ = db.Execute(statement.Insert(storage.Row{
+		Id:       uint32(id),
+		Username: username,
+		Email:    email,
+	}, table))
+
+	db.Close()
+	db = newDB(t)
+
+	_, _ = db.Execute(statement.CreateTable(table))
+	result, err := db.Execute(statement.Select(table))
+	failOnError(err, t)
+
+	if len(result) != 1 {
+		t.Errorf("expected 1 result, got: %d", len(result))
+	}
+
+	var user = result[0]
+
+	if user.Id != uint32(id) || user.Email != email || user.Username != username {
+		t.Errorf("got: %s, expected: %d, %s, and %s", user.ToString(), id, username, email)
+	}
+}
+
+func TestInsertDB(t *testing.T) {
+	db := newDB(t)
+	table := randomTableName()
 	id := 1
 	username := "pivovarit"
 	email := "foo@bar.com"
@@ -99,9 +135,9 @@ func TestInsertDB(t *testing.T) {
 }
 
 func TestMultipleTableInsert(t *testing.T) {
-	db := New()
-	table1 := "users1"
-	table2 := "users2"
+	db := newDB(t)
+	table1 := randomTableName()
+	table2 := randomTableName()
 
 	username1 := "pivovarit1"
 	email1 := "foo1@bar.com"
@@ -149,8 +185,8 @@ func TestMultipleTableInsert(t *testing.T) {
 }
 
 func TestInsertMultiplePages(t *testing.T) {
-	db := New()
-	table := "users"
+	db := newDB(t)
+	table := randomTableName()
 
 	username := "pivovarit"
 	email := "foo@bar.com"
@@ -183,4 +219,25 @@ func failOnError(err error, t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
+}
+
+func newDB(t *testing.T) *DB {
+	t.Cleanup(func() {
+		entries, err := os.ReadDir("./")
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+		for _, entry := range entries {
+			if entry.Type().IsRegular() && strings.HasPrefix(entry.Name(), storage.DbFileNamePrefix) {
+				_ = os.Remove(entry.Name())
+			}
+		}
+	})
+
+	return New()
+}
+
+func randomTableName() string {
+	return "users_" + strconv.Itoa(rand.Intn(100))
 }
