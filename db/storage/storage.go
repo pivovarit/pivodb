@@ -59,7 +59,10 @@ func Deserialize(row *SerializedRow) Row {
 }
 
 type Table struct {
-	PageCount uint32
 	RowCount  uint32
-	Pages     [TableMaxPages]*Page
+	Pager     *Pager
+}
+
+func NewTable() *Table {
+	return &Table{Pager: &Pager{pages: [TableMaxPages]*Page{}}}
 }
