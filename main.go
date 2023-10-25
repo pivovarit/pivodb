@@ -22,6 +22,7 @@ func main() {
 	root := prompt.New(
 		func(s string) {
 			if s == commandExit {
+				db.Close()
 				os.Exit(0)
 			} else if strings.HasPrefix(s, statement.InsertStatement.Value()) {
 				params := strings.Fields(s)
@@ -34,6 +35,7 @@ func main() {
 				id, err := strconv.Atoi(params[3])
 				if err != nil {
 					fmt.Printf("Id: [%s] needs to be numeric\n", params[3])
+					return
 				}
 
 				if len(params[5]) > storage.EmailSize {
