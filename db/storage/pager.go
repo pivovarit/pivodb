@@ -17,7 +17,7 @@ type Pager struct {
 
 func New(table string) *Pager {
 	fileName := fmt.Sprintf("%s_%s", DbFileNamePrefix, table)
-	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		panic(err)
 	}
@@ -71,7 +71,7 @@ func (p *Pager) GetPages() []*Page {
 	return result
 }
 
-func (p *Pager) Save(bytes [RowSize]byte) error {
-	_, err := p.file.Write(bytes[:])
+func (p *Pager) SaveAt(bytes [RowSize]byte, cursor *Cursor) error {
+	_, err := p.file.WriteAt(bytes[:], int64(cursor.Offset()))
 	return err
 }
