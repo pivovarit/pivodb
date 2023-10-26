@@ -35,10 +35,11 @@ func NewPage() *Page {
 	return &Page{Rows: [RowsPerPage]*[RowSize]byte{}}
 }
 
-func NewTable(table string) *Table {
+func Open(table string) *Table {
 	pager := New(table)
+	numRows := pager.FileLength() / RowSize
 	return &Table{
-		RowCount: pager.RowCount(),
+		RowCount: uint32(numRows),
 		Pager:    pager,
 	}
 }

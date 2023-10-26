@@ -17,6 +17,7 @@ const commandExit = "exit"
 var db = pivo.New()
 
 func main() {
+	defer db.Close()
 	fmt.Println("Please use `exit` or `Ctrl-D` to exit this program")
 	var stmt *statement.Statement = nil
 	root := prompt.New(

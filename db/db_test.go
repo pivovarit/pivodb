@@ -33,10 +33,14 @@ func TestEmptyDB(t *testing.T) {
 	table := randomTableName()
 
 	_, err := db.Execute(statement.CreateTable(table))
-	failOnError(err, t)
+	if errored(err, t) {
+		return
+	}
 
 	results, err := db.Execute(statement.Select(table))
-	failOnError(err, t)
+	if errored(err, t) {
+		return
+	}
 
 	if len(results) != 0 {
 		t.Errorf("expected empty result, got: %d", len(results))
@@ -73,7 +77,7 @@ func TestErrorOnFullDB(t *testing.T) {
 	}
 }
 
-func TestPersistence(t *testing.T) {
+func TestSurviveRestart(t *testing.T) {
 	db := New()
 	table := randomTableName()
 	id := 1
@@ -92,7 +96,9 @@ func TestPersistence(t *testing.T) {
 
 	_, _ = db.Execute(statement.CreateTable(table))
 	result, err := db.Execute(statement.Select(table))
-	failOnError(err, t)
+	if errored(err, t) {
+		return
+	}
 
 	if len(result) != 1 {
 		t.Errorf("expected 1 result, got: %d", len(result))
@@ -121,10 +127,13 @@ func TestInsertDB(t *testing.T) {
 
 	result, err := db.Execute(statement.Select(table))
 
-	failOnError(err, t)
+	if errored(err, t) {
+		return
+	}
 
 	if len(result) != 1 {
 		t.Errorf("expected 1 result, got: %d", len(result))
+		return
 	}
 
 	var user = result[0]
@@ -154,7 +163,9 @@ func TestMultipleTableInsert(t *testing.T) {
 		Email:    email1,
 	}, table1))
 
-	failOnError(err1, t)
+	if errored(err1, t) {
+		return
+	}
 
 	_, err2 := db.Execute(statement.Insert(storage.Row{
 		Id:       uint32(1),
@@ -162,21 +173,26 @@ func TestMultipleTableInsert(t *testing.T) {
 		Email:    email2,
 	}, table2))
 
-	failOnError(err2, t)
+	if errored(err2, t) {
+		return
+	}
 
 	r1, _ := db.Execute(statement.Select(table1))
 	r2, _ := db.Execute(statement.Select(table2))
 
 	if len(r1) != 1 {
 		t.Errorf("expected %s to have 1 row, actual: %d", table1, len(r1))
+		return
 	}
 
 	if r1[0].Id != 1 || r1[0].Email != email1 || r1[0].Username != username1 {
 		t.Errorf("got: %s, expected: %d, %s, and %s", r1[0].ToString(), 1, username1, email1)
+		return
 	}
 
 	if len(r2) != 1 {
 		t.Errorf("expected %s to have 1 row, actual: %d", table2, len(r2))
+		return
 	}
 
 	if r2[0].Id != 1 || r2[0].Email != email2 || r2[0].Username != username2 {
@@ -202,7 +218,9 @@ func TestInsertMultiplePages(t *testing.T) {
 
 	results, err := db.Execute(statement.Select(table))
 
-	failOnError(err, t)
+	if errored(err, t) {
+		return
+	}
 
 	for idx, r := range results {
 		if r.Id != uint32(idx) || r.Email != email || r.Username != username {
@@ -215,10 +233,12 @@ func TestInsertMultiplePages(t *testing.T) {
 	}
 }
 
-func failOnError(err error, t *testing.T) {
+func errored(err error, t *testing.T) bool {
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)
+		return true
 	}
+	return false
 }
 
 func newDB(t *testing.T) *DB {
