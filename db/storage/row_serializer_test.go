@@ -13,7 +13,7 @@ func TestSerializationDeserialization(t *testing.T) {
 	}
 
 	serializedRow := Serialize(row)
-	deserializedRow := Deserialize(&serializedRow)
+	deserializedRow := Deserialize(serializedRow)
 
 	if !reflect.DeepEqual(row, deserializedRow) {
 		t.Errorf("Mismatch in serialization/deserialization. Got: %+v, want: %+v.", deserializedRow, row)

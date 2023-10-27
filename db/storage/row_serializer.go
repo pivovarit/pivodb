@@ -10,7 +10,7 @@ func Serialize(row Row) [RowSize]byte {
 	return serialized
 }
 
-func Deserialize(row *[RowSize]byte) Row {
+func Deserialize(row [RowSize]byte) Row {
 	var id [IdSize]byte
 	var username [UsernameSize]byte
 	var email [EmailSize]byte
