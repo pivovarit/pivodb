@@ -41,7 +41,7 @@ func main() {
 				}
 
 				for _, row := range result {
-					fmt.Println(row.ToString())
+					fmt.Println(row.GetString("name"))
 				}
 			case statement.InsertStatement:
 				params := strings.Fields(s)
@@ -125,6 +125,9 @@ func main() {
 				{
 					Text:        commandExit,
 					Description: "Exit PivoDB"},
+				{
+					Text:        statement.TablesStatement.Value(),
+					Description: "List all tables"},
 				{
 					Text:        statement.SelectStatement.Value(),
 					Description: "SELECT SQL statement"},
