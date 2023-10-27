@@ -105,7 +105,7 @@ func TestSurviveRestart(t *testing.T) {
 
 	var user = result[0]
 
-	if user.Id != uint32(id) || user.Email != email || user.Username != username {
+	if user.GetString("id") != strconv.Itoa(id) || user.GetString("email") != email || user.GetString("username") != username {
 		t.Errorf("got: %s, expected: %d, %s, and %s", user.ToString(), id, username, email)
 	}
 }
@@ -137,7 +137,7 @@ func TestInsertDB(t *testing.T) {
 
 	var user = result[0]
 
-	if user.Id != uint32(id) || user.Email != email || user.Username != username {
+	if user.GetString("id") != strconv.Itoa(id) || user.GetString("email") != email || user.GetString("username") != username {
 		t.Errorf("got: %s, expected: %d, %s, and %s", user.ToString(), id, username, email)
 	}
 }
@@ -184,7 +184,7 @@ func TestMultipleTableInsert(t *testing.T) {
 		return
 	}
 
-	if r1[0].Id != 1 || r1[0].Email != email1 || r1[0].Username != username1 {
+	if r1[0].GetString("id") != "1" || r1[0].GetString("email") != email1 || r1[0].GetString("username") != username1 {
 		t.Errorf("got: %s, expected: %d, %s, and %s", r1[0].ToString(), 1, username1, email1)
 		return
 	}
@@ -194,7 +194,7 @@ func TestMultipleTableInsert(t *testing.T) {
 		return
 	}
 
-	if r2[0].Id != 1 || r2[0].Email != email2 || r2[0].Username != username2 {
+	if r2[0].GetString("id") != "1" || r2[0].GetString("email") != email2 || r2[0].GetString("username") != username2 {
 		t.Errorf("got: %s, expected: %d, %s, and %s", r2[0].ToString(), 1, username2, email2)
 	}
 }
@@ -222,10 +222,10 @@ func TestInsertMultiplePages(t *testing.T) {
 	}
 
 	for idx, r := range results {
-		if r.Id != uint32(idx) || r.Email != email || r.Username != username {
-			fmt.Printf("[%d][%d][equal: %t]\n", r.Id, uint32(idx), r.Id == uint32(idx))
-			fmt.Printf("[%s][%s][equal: %t]\n", r.Email, email, r.Email == email)
-			fmt.Printf("[%s][%s][equal: %t]\n", r.Username, username, r.Username == username)
+		if r.GetString("id") != strconv.Itoa(idx) || r.GetString("email") != email || r.GetString("username") != username {
+			fmt.Printf("[%s][%s][equal: %t]\n", r.GetString("id"), strconv.Itoa(idx), r.GetString("id") == strconv.Itoa(idx))
+			fmt.Printf("[%s][%s][equal: %t]\n", r.GetString("email"), email, r.GetString("email") == email)
+			fmt.Printf("[%s][%s][equal: %t]\n", r.GetString("username"), username, r.GetString("username") == username)
 			t.Errorf("got: %s, expected: %d, %s, and %s", r.ToString(), idx, username, email)
 			break
 		}
