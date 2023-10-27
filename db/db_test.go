@@ -47,6 +47,52 @@ func TestEmptyDB(t *testing.T) {
 	}
 }
 
+func TestEmptyTables(t *testing.T) {
+	db := newDB(t)
+
+	result, err := db.Execute(statement.Tables())
+	if errored(err, t) {
+		return
+	}
+
+	if len(result) != 0 {
+		t.Errorf("expected empty tables list, got: %d", len(result))
+	}
+}
+
+func TestListingTables(t *testing.T) {
+	db := newDB(t)
+
+	_, _ = db.Execute(statement.CreateTable("table1"))
+	_, _ = db.Execute(statement.CreateTable("table2"))
+
+	result, err := db.Execute(statement.Tables())
+	if errored(err, t) {
+		return
+	}
+
+	if len(result) != 2 {
+		t.Errorf("expected tables list of size: 2, got: %d", len(result))
+	}
+	var t1Found = false
+	var t2Found = false
+	for _, r := range result {
+		if r.GetString("name") == "table1" {
+			t1Found = true
+		}
+
+		if r.GetString("name") == "table2" {
+			t2Found = true
+		}
+	}
+	if !t1Found {
+		t.Errorf("table1 not found in the resultset")
+	}
+	if !t2Found {
+		t.Errorf("table2 not found in the resultset")
+	}
+}
+
 func TestErrorOnFullDB(t *testing.T) {
 	db := newDB(t)
 	table := randomTableName()

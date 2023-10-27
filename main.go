@@ -34,6 +34,15 @@ func main() {
 			}
 
 			switch *stmtType {
+			case statement.TablesStatement:
+				result, err := db.Execute(statement.Tables())
+				if err != nil {
+					fmt.Printf("%s\n", err)
+				}
+
+				for _, row := range result {
+					fmt.Println(row.ToString())
+				}
 			case statement.InsertStatement:
 				params := strings.Fields(s)
 				if (len(params)) != 6 {
