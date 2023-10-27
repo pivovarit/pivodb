@@ -28,7 +28,7 @@ func main() {
 			}
 
 			stmtType := statement.ParseStatementType(s)
-			if stmtType != nil {
+			if stmtType == nil {
 				fmt.Printf("Unrecognized command: %s\n", s)
 				return
 			}
