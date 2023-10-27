@@ -6,19 +6,33 @@ import (
 	"github.com/pivovarit/pivodb/db/storage"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 )
 
-type Result struct {
-	Id       uint32
-	Username string
-	Email    string
-	PageId   uint32
-	RowId    uint32
+type ResultSet struct {
+	columns map[string]string
+	PageId  uint32
+	RowId   uint32
 }
 
-func (r *Result) ToString() string {
-	return fmt.Sprintf("(%d,%s,%s) [rowId: %d, pageId: %d]", r.Id, r.Username, r.Email, r.RowId, r.PageId)
+func (r *ResultSet) GetString(column string) string {
+	return r.columns[column]
+}
+
+func (r *ResultSet) ToString() string {
+	var b strings.Builder
+
+	for key, val := range r.columns {
+		if b.Len() > 0 {
+			b.WriteString(",")
+		}
+		_, err := fmt.Fprintf(&b, "%s=%s", key, val)
+		if err != nil {
+			return ""
+		}
+	}
+	return fmt.Sprintf("(%s) [rowId: %d, pageId: %d]", b.String(), r.RowId, r.PageId)
 }
 
 type DB struct {
@@ -35,23 +49,23 @@ func (db *DB) Close() {
 	}
 }
 
-func (db *DB) Execute(stmt *statement.Statement) ([]Result, error) {
+func (db *DB) Execute(stmt *statement.Statement) ([]ResultSet, error) {
 	switch stmt.StatementType {
 	case statement.CreateTableStatement:
 		if db.Tables[stmt.TableName] != nil {
-			return []Result{}, fmt.Errorf("table [%s] already exists", stmt.TableName)
+			return []ResultSet{}, fmt.Errorf("table [%s] already exists", stmt.TableName)
 		}
 
 		db.Tables[stmt.TableName] = storage.Open(stmt.TableName)
-		return []Result{}, nil
+		return []ResultSet{}, nil
 	case statement.InsertStatement:
 		table := db.Tables[stmt.TableName]
 		if table == nil {
-			return []Result{}, fmt.Errorf("table [%s] does not exist", stmt.TableName)
+			return []ResultSet{}, fmt.Errorf("table [%s] does not exist", stmt.TableName)
 		}
 
 		if db.Tables[stmt.TableName].RowCount == storage.TableMaxRows {
-			return []Result{}, fmt.Errorf("max row count reached: %d", storage.TableMaxRows)
+			return []ResultSet{}, fmt.Errorf("max row count reached: %d", storage.TableMaxRows)
 		}
 		table.Pager.SaveAt(storage.Serialize(storage.Row{
 			Id:       stmt.RowToInsert.Id,
@@ -59,14 +73,14 @@ func (db *DB) Execute(stmt *statement.Statement) ([]Result, error) {
 			Email:    stmt.RowToInsert.Email,
 		}), storage.EndOf(table))
 		table.RowCount++
-		return []Result{}, nil
+		return []ResultSet{}, nil
 	case statement.SelectStatement:
 		table := db.Tables[stmt.TableName]
 		if table == nil {
-			return []Result{}, fmt.Errorf("table [%s] does not exist", stmt.TableName)
+			return []ResultSet{}, fmt.Errorf("table [%s] does not exist", stmt.TableName)
 		}
 
-		var results []Result
+		var results []ResultSet
 		cursor := storage.StartOf(table)
 		for !cursor.EndOfTable {
 			row, err := table.Pager.GetRow(cursor.RowNum)
@@ -76,12 +90,14 @@ func (db *DB) Execute(stmt *statement.Statement) ([]Result, error) {
 			if row == nil {
 				break
 			}
-			results = append(results, Result{
-				Id:       row.Id,
-				Username: row.Username,
-				Email:    row.Email,
-				PageId:   cursor.RowNum / storage.RowsPerPage,
-				RowId:    cursor.RowNum,
+			results = append(results, ResultSet{
+				columns: map[string]string{
+					"id":       strconv.Itoa(int(row.Id)),
+					"username": row.Username,
+					"email":    row.Email,
+				},
+				PageId: cursor.RowNum / storage.RowsPerPage,
+				RowId:  cursor.RowNum,
 			})
 
 			cursor.Next()
@@ -89,7 +105,7 @@ func (db *DB) Execute(stmt *statement.Statement) ([]Result, error) {
 
 		return results[:], nil
 	}
-	return []Result{}, fmt.Errorf("unrecognized statement: %s", stmt.StatementType)
+	return []ResultSet{}, fmt.Errorf("unrecognized statement: %s", stmt.StatementType)
 }
 
 func openExistingTables() map[string]*storage.Table {
