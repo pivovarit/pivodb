@@ -129,6 +129,9 @@ func main() {
 					Text:        statement.TablesStatement.Value(),
 					Description: "List all tables"},
 				{
+					Text:        statement.CreateTableStatement.Value(),
+					Description: "CREATE TABLE SQL statement"},
+				{
 					Text:        statement.SelectStatement.Value(),
 					Description: "SELECT SQL statement"},
 				{
