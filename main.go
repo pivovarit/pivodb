@@ -25,7 +25,16 @@ func main() {
 			if s == commandExit {
 				db.Close()
 				os.Exit(0)
-			} else if strings.HasPrefix(s, statement.InsertStatement.Value()) {
+			}
+
+			stmtType := statement.ParseStatementType(s)
+			if stmtType != nil {
+				fmt.Printf("Unrecognized command: %s\n", s)
+				return
+			}
+
+			switch *stmtType {
+			case statement.InsertStatement:
 				params := strings.Fields(s)
 				if (len(params)) != 6 {
 					fmt.Println("Invalid statement: '" + s + "', try: 'insert into users {id} {username} {email}")
@@ -63,7 +72,7 @@ func main() {
 					fmt.Printf("%s\n", err)
 					return
 				}
-			} else if strings.HasPrefix(s, statement.SelectStatement.Value()) {
+			case statement.SelectStatement:
 				params := strings.Fields(s)
 				if (len(params)) != 4 {
 					fmt.Println("Invalid statement: '" + s + "', try: 'select * from <table>")
@@ -85,7 +94,7 @@ func main() {
 				if err != nil {
 					fmt.Printf("%s\n", err)
 				}
-			} else if strings.HasPrefix(s, statement.CreateTableStatement.Value()) {
+			case statement.CreateTableStatement:
 				params := strings.Fields(s)
 				if (len(params)) != 3 {
 					fmt.Println("Invalid statement: '" + s + "', try: 'create table <table>")
@@ -98,8 +107,8 @@ func main() {
 				if err != nil {
 					fmt.Printf("%s\n", err)
 				}
-			} else {
-				fmt.Println("Unrecognized command: " + s)
+			default:
+				panic(fmt.Errorf("no implemented support for %s", *stmtType))
 			}
 		},
 		func(document prompt.Document) []prompt.Suggest {

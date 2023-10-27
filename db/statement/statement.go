@@ -1,6 +1,9 @@
 package statement
 
-import "github.com/pivovarit/pivodb/db/storage"
+import (
+	"github.com/pivovarit/pivodb/db/storage"
+	"strings"
+)
 
 type Type string
 
@@ -10,8 +13,21 @@ const (
 	SelectStatement      Type = "select"
 )
 
+func Types() []Type {
+	return []Type{InsertStatement, CreateTableStatement, SelectStatement}
+}
+
 func (t Type) Value() string {
 	return string(t)
+}
+
+func ParseStatementType(str string) *Type {
+	for _, statement := range Types() {
+		if strings.HasPrefix(str, statement.Value()) {
+			return &statement
+		}
+	}
+	return nil
 }
 
 type Statement struct {
