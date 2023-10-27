@@ -11,23 +11,28 @@ import (
 )
 
 type ResultSet struct {
-	columns map[string]string
+	columns LinkedMap
 	PageId  uint32
 	RowId   uint32
 }
 
+type LinkedMap struct {
+	dict        map[string]string
+	orderedKeys []string
+}
+
 func (r *ResultSet) GetString(column string) string {
-	return r.columns[column]
+	return r.columns.dict[column]
 }
 
 func (r *ResultSet) ToString() string {
 	var b strings.Builder
 
-	for key, val := range r.columns {
+	for _, key := range r.columns.orderedKeys {
 		if b.Len() > 0 {
 			b.WriteString(",")
 		}
-		_, err := fmt.Fprintf(&b, "%s=%s", key, val)
+		_, err := fmt.Fprintf(&b, "%s=%s", key, r.columns.dict[key])
 		if err != nil {
 			return ""
 		}
@@ -55,8 +60,11 @@ func (db *DB) Execute(stmt *statement.Statement) ([]ResultSet, error) {
 		var result []ResultSet
 
 		for tableName := range db.Tables {
-			result = append(result, ResultSet{columns: map[string]string{
-				"name": tableName,
+			result = append(result, ResultSet{columns: LinkedMap{
+				dict: map[string]string{
+					"name": tableName,
+				},
+				orderedKeys: []string{"name"},
 			}})
 		}
 
@@ -101,10 +109,13 @@ func (db *DB) Execute(stmt *statement.Statement) ([]ResultSet, error) {
 				break
 			}
 			results = append(results, ResultSet{
-				columns: map[string]string{
-					"id":       strconv.Itoa(int(row.Id)),
-					"username": row.Username,
-					"email":    row.Email,
+				columns: LinkedMap{
+					dict: map[string]string{
+						"id":       strconv.Itoa(int(row.Id)),
+						"username": row.Username,
+						"email":    row.Email,
+					},
+					orderedKeys: []string{"id", "username", "email"},
 				},
 				PageId: cursor.RowNum / storage.RowsPerPage,
 				RowId:  cursor.RowNum,
