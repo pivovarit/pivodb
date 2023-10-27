@@ -145,7 +145,7 @@ func TestInsertDB(t *testing.T) {
 func TestMultipleTableInsert(t *testing.T) {
 	db := newDB(t)
 	table1 := randomTableName()
-	table2 := randomTableName()
+	table2 := table1 + "_2"
 
 	username1 := "pivovarit1"
 	email1 := "foo1@bar.com"
@@ -258,5 +258,5 @@ func newDB(t *testing.T) *DB {
 }
 
 func randomTableName() string {
-	return "users_" + strconv.Itoa(rand.Intn(100))
+	return "users_" + strconv.Itoa(rand.Int())
 }
