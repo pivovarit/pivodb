@@ -11,10 +11,11 @@ const (
 	InsertStatement      Type = "insert into"
 	CreateTableStatement Type = "create table"
 	SelectStatement      Type = "select"
+	TablesStatement      Type = "tables"
 )
 
 func Types() []Type {
-	return []Type{InsertStatement, CreateTableStatement, SelectStatement}
+	return []Type{InsertStatement, CreateTableStatement, SelectStatement, TablesStatement}
 }
 
 func (t Type) Value() string {
@@ -56,4 +57,8 @@ func Select(table string) *Statement {
 		StatementType: SelectStatement,
 		TableName:     table,
 	}
+}
+
+func Tables() *Statement {
+	return &Statement{StatementType: TablesStatement}
 }

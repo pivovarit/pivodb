@@ -51,6 +51,16 @@ func (db *DB) Close() {
 
 func (db *DB) Execute(stmt *statement.Statement) ([]ResultSet, error) {
 	switch stmt.StatementType {
+	case statement.TablesStatement:
+		var result []ResultSet
+
+		for tableName := range db.Tables {
+			result = append(result, ResultSet{columns: map[string]string{
+				"name": tableName,
+			}})
+		}
+
+		return result, nil
 	case statement.CreateTableStatement:
 		if db.Tables[stmt.TableName] != nil {
 			return []ResultSet{}, fmt.Errorf("table [%s] already exists", stmt.TableName)
