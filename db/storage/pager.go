@@ -4,11 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math"
 	"os"
 )
 
-const DbFileNamePrefix = ".pivodb"
+const DbFileNamePrefix = ".pivodb_"
 
 type Pager struct {
 	pageCache [TableMaxPages]*Page
@@ -16,7 +15,7 @@ type Pager struct {
 }
 
 func New(table string) *Pager {
-	fileName := fmt.Sprintf("%s_%s", DbFileNamePrefix, table)
+	fileName := DbFileNamePrefix + table
 	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		panic(err)
@@ -42,14 +41,6 @@ func (p *Pager) FileLength() uint64 {
 	}
 
 	return uint64(stat.Size())
-}
-
-func (p *Pager) PageCount() uint32 {
-	stat, err := p.file.Stat()
-	if err != nil {
-		panic(err)
-	}
-	return uint32(math.Ceil((float64(stat.Size()) / float64(RowSize)) / float64(RowsPerPage)))
 }
 
 func (p *Pager) FlushToDisk() {

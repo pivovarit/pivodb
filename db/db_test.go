@@ -94,7 +94,6 @@ func TestSurviveRestart(t *testing.T) {
 	db.Close()
 	db = newDB(t)
 
-	_, _ = db.Execute(statement.CreateTable(table))
 	result, err := db.Execute(statement.Select(table))
 	if errored(err, t) {
 		return

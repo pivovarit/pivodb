@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"github.com/pivovarit/pivodb/db/statement"
 	"github.com/pivovarit/pivodb/db/storage"
+	"log"
+	"os"
+	"strings"
 )
 
 type Result struct {
@@ -23,7 +26,7 @@ type DB struct {
 }
 
 func New() *DB {
-	return &DB{Tables: map[string]*storage.Table{}}
+	return &DB{Tables: openExistingTables()}
 }
 
 func (db *DB) Close() {
@@ -87,4 +90,19 @@ func (db *DB) Execute(stmt *statement.Statement) ([]Result, error) {
 		return results[:], nil
 	}
 	return []Result{}, fmt.Errorf("unrecognized statement: %s", stmt.StatementType)
+}
+
+func openExistingTables() map[string]*storage.Table {
+	entries, err := os.ReadDir("./")
+	if err != nil {
+		log.Fatalf("could not read db file: %s\n", err)
+	}
+	tables := map[string]*storage.Table{}
+	for _, entry := range entries {
+		if entry.Type().IsRegular() && strings.HasPrefix(entry.Name(), storage.DbFileNamePrefix) {
+			tableName := strings.SplitAfter(entry.Name(), storage.DbFileNamePrefix)[1]
+			tables[tableName] = storage.Open(tableName)
+		}
+	}
+	return tables
 }
