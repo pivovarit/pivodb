@@ -22,6 +22,13 @@ func EndOf(table *Table) *Cursor {
 	}
 }
 
+func (c *Cursor) Next() {
+	c.RowNum++
+	if c.RowNum == c.Table.RowCount {
+		c.EndOfTable = true
+	}
+}
+
 func (c *Cursor) Offset() uint32 {
 	return c.RowNum * RowSize
 }
