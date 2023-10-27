@@ -17,8 +17,20 @@ func DeserializePage(bytes []byte) *Page {
 	idx := 0
 	for i := 0; i < len(bytes); i = i + RowSize {
 		var row = [RowSize]byte(bytes[i : i+RowSize])
+		if allZero(row[:]) {
+			break
+		}
 		page.Rows[idx] = &row
 		idx++
 	}
 	return page
+}
+
+func allZero(s []byte) bool {
+	for _, v := range s {
+		if v != 0 {
+			return false
+		}
+	}
+	return true
 }

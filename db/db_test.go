@@ -77,6 +77,47 @@ func TestErrorOnFullDB(t *testing.T) {
 	}
 }
 
+func TestIgnoreRandomPageData(t *testing.T) {
+	db := New()
+	table := randomTableName()
+	id := 1
+	username := "pivovarit"
+	email := "foo@bar.com"
+
+	_, _ = db.Execute(statement.CreateTable(table))
+	_, _ = db.Execute(statement.Insert(storage.Row{
+		Id:       uint32(id),
+		Username: username,
+		Email:    email,
+	}, table))
+
+	db.Close()
+	db = newDB(t)
+
+	_, err := db.Execute(statement.Select(table))
+	if errored(err, t) {
+		return
+	}
+
+	db.Close()
+	db = newDB(t)
+
+	result, err := db.Execute(statement.Select(table))
+	if errored(err, t) {
+		return
+	}
+
+	if len(result) != 1 {
+		t.Errorf("expected 1 result, got: %d", len(result))
+	}
+
+	var user = result[0]
+
+	if user.GetString("id") != strconv.Itoa(id) || user.GetString("email") != email || user.GetString("username") != username {
+		t.Errorf("got: %s, expected: %d, %s, and %s", user.ToString(), id, username, email)
+	}
+}
+
 func TestSurviveRestart(t *testing.T) {
 	db := New()
 	table := randomTableName()

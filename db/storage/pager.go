@@ -92,7 +92,7 @@ func (p *Pager) GetRow(RowNum uint32) (*Row, error) {
 
 	row := page.Rows[RowNum%RowsPerPage]
 	if row != nil {
-		deserialized := Deserialize(row)
+		deserialized := Deserialize(*row)
 		return &deserialized, nil
 	}
 
