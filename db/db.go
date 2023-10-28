@@ -11,28 +11,24 @@ import (
 )
 
 type ResultSet struct {
-	columns LinkedMap
+	columns map[string]string
+	keys    []string
 	PageId  uint32
 	RowId   uint32
 }
 
-type LinkedMap struct {
-	dict        map[string]string
-	orderedKeys []string
-}
-
 func (r *ResultSet) GetString(column string) string {
-	return r.columns.dict[column]
+	return r.columns[column]
 }
 
 func (r *ResultSet) ToString() string {
 	var b strings.Builder
 
-	for _, key := range r.columns.orderedKeys {
+	for _, key := range r.keys {
 		if b.Len() > 0 {
 			b.WriteString(",")
 		}
-		_, err := fmt.Fprintf(&b, "%s=%s", key, r.columns.dict[key])
+		_, err := fmt.Fprintf(&b, "%s=%s", key, r.columns[key])
 		if err != nil {
 			return ""
 		}
@@ -60,12 +56,9 @@ func (db *DB) Execute(stmt *statement.Statement) ([]ResultSet, error) {
 		var result []ResultSet
 
 		for tableName := range db.Tables {
-			result = append(result, ResultSet{columns: LinkedMap{
-				dict: map[string]string{
-					"name": tableName,
-				},
-				orderedKeys: []string{"name"},
-			}})
+			result = append(result, ResultSet{columns: map[string]string{
+				"name": tableName,
+			}, keys: []string{"name"}})
 		}
 
 		return result, nil
@@ -109,14 +102,12 @@ func (db *DB) Execute(stmt *statement.Statement) ([]ResultSet, error) {
 				break
 			}
 			results = append(results, ResultSet{
-				columns: LinkedMap{
-					dict: map[string]string{
-						"id":       strconv.Itoa(int(row.Id)),
-						"username": row.Username,
-						"email":    row.Email,
-					},
-					orderedKeys: []string{"id", "username", "email"},
+				columns: map[string]string{
+					"id":       strconv.Itoa(int(row.Id)),
+					"username": row.Username,
+					"email":    row.Email,
 				},
+				keys:   []string{"id", "username", "email"},
 				PageId: cursor.RowNum / storage.RowsPerPage,
 				RowId:  cursor.RowNum,
 			})
