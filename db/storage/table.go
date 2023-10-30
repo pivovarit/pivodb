@@ -17,7 +17,8 @@ const (
 )
 
 type Page struct {
-	Rows [RowsPerPage]*[RowSize]byte
+	Dirty bool
+	Rows  [RowsPerPage]*[RowSize]byte
 }
 
 type Row struct {
@@ -32,7 +33,9 @@ type Table struct {
 }
 
 func NewPage() *Page {
-	return &Page{Rows: [RowsPerPage]*[RowSize]byte{}}
+	return &Page{
+		Dirty: false,
+		Rows:  [RowsPerPage]*[RowSize]byte{}}
 }
 
 func Open(table string) *Table {
