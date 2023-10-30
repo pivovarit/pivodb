@@ -197,6 +197,54 @@ func TestSurviveRestart(t *testing.T) {
 	}
 }
 
+func TestLoadPageBeforeInsert(t *testing.T) {
+	db := New()
+	table := randomTableName()
+	id := 1
+	username := "pivovarit"
+	email := "foo@bar.com"
+
+	_, _ = db.Execute(statement.CreateTable(table))
+	_, _ = db.Execute(statement.Insert(storage.Row{
+		Id:       uint32(id),
+		Username: username,
+		Email:    email,
+	}, table))
+
+	db.Close()
+	db = newDB(t)
+
+	_, err := db.Execute(statement.Insert(storage.Row{
+		Id:       uint32(id) + 1,
+		Username: username + "2",
+		Email:    email + "2",
+	}, table))
+	if errored(err, t) {
+		return
+	}
+
+	result, err := db.Execute(statement.Select(table))
+	if errored(err, t) {
+		return
+	}
+
+	if len(result) != 2 {
+		t.Errorf("expected 2 results, got: %d", len(result))
+		return
+	}
+
+	user1 := result[0]
+	user2 := result[1]
+
+	if user1.GetString("id") != strconv.Itoa(id) || user1.GetString("email") != email || user1.GetString("username") != username {
+		t.Errorf("got: %s, expected: %d, %s, and %s", user1.ToString(), id, username, email)
+	}
+
+	if user2.GetString("id") != strconv.Itoa(id+1) || user2.GetString("email") != (email+"2") || user2.GetString("username") != (username+"2") {
+		t.Errorf("got: %s, expected: %d, %s, and %s", user2.ToString(), id, username, email)
+	}
+}
+
 func TestInsertDB(t *testing.T) {
 	db := newDB(t)
 	table := randomTableName()
