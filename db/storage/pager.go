@@ -78,18 +78,7 @@ func (p *Pager) GetPages() []*Page {
 
 func (p *Pager) GetRow(RowNum uint32) (*Row, error) {
 	pageId := RowNum / RowsPerPage
-	page := p.pageCache[pageId]
-	if page == nil {
-		loaded := p.load(pageId)
-		if loaded != nil {
-			p.pageCache[pageId] = loaded
-			page = loaded
-		} else {
-			page = NewPage()
-			p.pageCache[pageId] = page
-		}
-	}
-
+	page := p.loadPage(pageId)
 	row := page.Rows[RowNum%RowsPerPage]
 	if row != nil {
 		deserialized := Deserialize(*row)
@@ -99,7 +88,7 @@ func (p *Pager) GetRow(RowNum uint32) (*Row, error) {
 	return nil, nil
 }
 
-func (p *Pager) load(pageId uint32) *Page {
+func (p *Pager) readPageFromDisk(pageId uint32) *Page {
 	page := make([]byte, RowsPerPage*RowSize)
 	readBytes, err := p.file.ReadAt(page, int64(pageId*RowsPerPage*RowSize))
 	if err != nil && !errors.Is(err, io.EOF) {
@@ -122,12 +111,22 @@ func (p *Pager) GetRowAt(cursor *Cursor) (Row, error) {
 
 func (p *Pager) SaveAt(bytes [RowSize]byte, cursor *Cursor) {
 	pageId := cursor.RowNum / RowsPerPage
-	page := p.pageCache[pageId]
-	if page == nil {
-		page = NewPage()
-		p.pageCache[pageId] = page
-	}
-
+	page := p.loadPage(pageId)
 	page.Rows[cursor.RowNum%RowsPerPage] = &bytes
 	page.Dirty = true
+}
+
+func (p *Pager) loadPage(pageId uint32) *Page {
+	page := p.pageCache[pageId]
+	if page == nil {
+		loaded := p.readPageFromDisk(pageId)
+		if loaded != nil {
+			p.pageCache[pageId] = loaded
+			page = loaded
+		} else {
+			page = NewPage()
+			p.pageCache[pageId] = page
+		}
+	}
+	return page
 }
