@@ -45,7 +45,7 @@ func (p *Pager) FileLength() uint64 {
 
 func (p *Pager) FlushToDisk() {
 	for pageId, page := range p.pageCache {
-		if page != nil {
+		if page != nil && page.Dirty {
 			offset := int64(pageId * (RowsPerPage * RowSize))
 			_, err := p.file.WriteAt(SerializePage(page), offset)
 			if err != nil {
@@ -129,4 +129,5 @@ func (p *Pager) SaveAt(bytes [RowSize]byte, cursor *Cursor) {
 	}
 
 	page.Rows[cursor.RowNum%RowsPerPage] = &bytes
+	page.Dirty = true
 }
