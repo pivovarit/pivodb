@@ -1,5 +1,7 @@
 package storage
 
+import "github.com/pivovarit/pivodb/db/storage/layout"
+
 type Cursor struct {
 	Table      *Table
 	RowNum     uint32
@@ -30,5 +32,5 @@ func (c *Cursor) Next() {
 }
 
 func (c *Cursor) Offset() uint32 {
-	return c.RowNum * RowSize
+	return c.RowNum * layout.RowSize
 }

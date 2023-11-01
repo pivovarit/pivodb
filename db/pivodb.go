@@ -6,6 +6,7 @@ import (
 	"github.com/c-bata/go-prompt/completer"
 	"github.com/pivovarit/pivodb/db/statement"
 	"github.com/pivovarit/pivodb/db/storage"
+	"github.com/pivovarit/pivodb/db/storage/layout"
 	"os"
 	"strconv"
 	"strings"
@@ -69,14 +70,14 @@ func (p *Repl) prepareRepl() *prompt.Prompt {
 					return
 				}
 
-				if len(params[5]) > storage.EmailSize {
+				if len(params[5]) > layout.EmailSize {
 					fmt.Println("Exceeded length for email column")
 					return
 				}
 
 				email := params[5]
 
-				if len(params[4]) > storage.UsernameSize {
+				if len(params[4]) > layout.UsernameSize {
 					fmt.Println("Exceeded length for username column")
 					return
 				}

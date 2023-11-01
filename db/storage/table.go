@@ -1,24 +1,10 @@
 package storage
 
-const (
-	PageSize      = 4096
-	TableMaxPages = 100
-
-	IdSize         = 4
-	UsernameSize   = 32
-	EmailSize      = 255
-	RowSize        = IdSize + UsernameSize + EmailSize
-	IdOffset       = 0
-	UsernameOffset = IdOffset + IdSize
-	EmailOffset    = UsernameOffset + UsernameSize
-
-	RowsPerPage  = PageSize / (IdSize + UsernameSize + EmailSize)
-	TableMaxRows = RowsPerPage * TableMaxPages
-)
+import "github.com/pivovarit/pivodb/db/storage/layout"
 
 type Page struct {
 	Dirty bool
-	Rows  [RowsPerPage]*[RowSize]byte
+	Rows  [RowsPerPage]*[layout.RowSize]byte
 }
 
 type Row struct {
@@ -35,12 +21,12 @@ type Table struct {
 func NewPage() *Page {
 	return &Page{
 		Dirty: false,
-		Rows:  [RowsPerPage]*[RowSize]byte{}}
+		Rows:  [RowsPerPage]*[layout.RowSize]byte{}}
 }
 
 func Open(table string) *Table {
 	pager := New(table)
-	numRows := pager.FileLength() / RowSize
+	numRows := pager.FileLength() / layout.RowSize
 	return &Table{
 		RowCount: uint32(numRows),
 		Pager:    pager,
