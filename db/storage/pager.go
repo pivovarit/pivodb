@@ -3,12 +3,20 @@ package storage
 import (
 	"errors"
 	"fmt"
+	"github.com/pivovarit/pivodb/db/storage/layout"
 	"github.com/rs/zerolog/log"
 	"io"
 	"os"
 )
 
 const DbFileNamePrefix = ".pivodb_"
+
+const (
+	PageSize      = 4096
+	TableMaxPages = 100
+	RowsPerPage   = PageSize / (layout.IdSize + layout.UsernameSize + layout.EmailSize)
+	TableMaxRows  = RowsPerPage * TableMaxPages
+)
 
 type Pager struct {
 	pageCache [TableMaxPages]*Page
@@ -50,7 +58,7 @@ func (p *Pager) FlushToDisk() {
 		if page != nil && page.Dirty {
 			log.Debug().Int("pageId", pageId).Msg("Flushing page to disk")
 
-			offset := int64(pageId * (RowsPerPage * RowSize))
+			offset := int64(pageId * (RowsPerPage * layout.RowSize))
 			_, err := p.file.WriteAt(SerializePage(page), offset)
 			if err != nil {
 				panic("could not flush to disk: " + err.Error())
@@ -66,8 +74,8 @@ func (p *Pager) GetPages() []*Page {
 		panic(err)
 	}
 
-	for i := 0; i < int(stat.Size()); i = i + RowsPerPage*RowSize {
-		page := make([]byte, RowsPerPage*RowSize)
+	for i := 0; i < int(stat.Size()); i = i + RowsPerPage*layout.RowSize {
+		page := make([]byte, RowsPerPage*layout.RowSize)
 		_, err = p.file.ReadAt(page, int64(i))
 		if err != nil && !errors.Is(err, io.EOF) {
 			panic(err)
@@ -95,8 +103,8 @@ func (p *Pager) GetRow(RowNum uint32) (*Row, error) {
 func (p *Pager) readPageFromDisk(pageId uint32) *Page {
 	log.Debug().Uint32("pageId", pageId).Msg("Loading page from disk")
 
-	page := make([]byte, RowsPerPage*RowSize)
-	readBytes, err := p.file.ReadAt(page, int64(pageId*RowsPerPage*RowSize))
+	page := make([]byte, RowsPerPage*layout.RowSize)
+	readBytes, err := p.file.ReadAt(page, int64(pageId*RowsPerPage*layout.RowSize))
 	if err != nil && !errors.Is(err, io.EOF) {
 		panic("page ended: " + err.Error())
 	}
@@ -115,7 +123,7 @@ func (p *Pager) GetRowAt(cursor *Cursor) (Row, error) {
 	return *row, err
 }
 
-func (p *Pager) SaveAt(bytes [RowSize]byte, cursor *Cursor) {
+func (p *Pager) SaveAt(bytes [layout.RowSize]byte, cursor *Cursor) {
 	pageId := cursor.RowNum / RowsPerPage
 	page := p.loadPage(pageId)
 	page.Rows[cursor.RowNum%RowsPerPage] = &bytes

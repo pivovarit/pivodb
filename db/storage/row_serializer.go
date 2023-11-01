@@ -1,23 +1,26 @@
 package storage
 
-import "github.com/pivovarit/pivodb/db/serializer"
+import (
+	"github.com/pivovarit/pivodb/db/serializer"
+	"github.com/pivovarit/pivodb/db/storage/layout"
+)
 
-func Serialize(row Row) [RowSize]byte {
-	var serialized [RowSize]byte
-	copy(serialized[IdOffset:UsernameOffset], serializer.WriteUint32(row.Id))
-	copy(serialized[UsernameOffset:EmailOffset], serializer.WriteString(row.Username))
-	copy(serialized[EmailOffset:], serializer.WriteString(row.Email))
+func Serialize(row Row) [layout.RowSize]byte {
+	var serialized [layout.RowSize]byte
+	copy(serialized[layout.IdOffset:layout.UsernameOffset], serializer.WriteUint32(row.Id))
+	copy(serialized[layout.UsernameOffset:layout.EmailOffset], serializer.WriteString(row.Username))
+	copy(serialized[layout.EmailOffset:], serializer.WriteString(row.Email))
 	return serialized
 }
 
-func Deserialize(row [RowSize]byte) Row {
-	var id [IdSize]byte
-	var username [UsernameSize]byte
-	var email [EmailSize]byte
+func Deserialize(row [layout.RowSize]byte) Row {
+	var id [layout.IdSize]byte
+	var username [layout.UsernameSize]byte
+	var email [layout.EmailSize]byte
 
-	copy(id[:], row[IdOffset:UsernameOffset])
-	copy(username[:], row[UsernameOffset:EmailOffset])
-	copy(email[:], row[EmailOffset:])
+	copy(id[:], row[layout.IdOffset:layout.UsernameOffset])
+	copy(username[:], row[layout.UsernameOffset:layout.EmailOffset])
+	copy(email[:], row[layout.EmailOffset:])
 
 	return Row{
 		Id:       serializer.ReadUint32(id),

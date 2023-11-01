@@ -2,7 +2,7 @@ package main
 
 import (
 	pivo "github.com/pivovarit/pivodb/db"
-	"github.com/pivovarit/pivodb/db/layout"
+	"github.com/pivovarit/pivodb/db/storage/layout"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"os"

@@ -1,5 +1,7 @@
 package storage
 
+import "github.com/pivovarit/pivodb/db/storage/layout"
+
 func SerializePage(page *Page) []byte {
 	var result []byte
 	for _, row := range page.Rows {
@@ -15,8 +17,8 @@ func SerializePage(page *Page) []byte {
 func DeserializePage(bytes []byte) *Page {
 	page := NewPage()
 	idx := 0
-	for i := 0; i < len(bytes); i = i + RowSize {
-		var row = [RowSize]byte(bytes[i : i+RowSize])
+	for i := 0; i < len(bytes); i = i + layout.RowSize {
+		var row = [layout.RowSize]byte(bytes[i : i+layout.RowSize])
 		if allZero(row[:]) {
 			break
 		}
