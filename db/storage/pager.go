@@ -3,6 +3,7 @@ package storage
 import (
 	"errors"
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"io"
 	"os"
 )
@@ -24,6 +25,7 @@ func New(table string) *Pager {
 	if err != nil {
 		file, err = os.Create(fileName)
 		if err != nil {
+			log.Error().Err(err).Msg("Could not open db files")
 			panic("could not open/create db file")
 		}
 	}
@@ -46,6 +48,8 @@ func (p *Pager) FileLength() uint64 {
 func (p *Pager) FlushToDisk() {
 	for pageId, page := range p.pageCache {
 		if page != nil && page.Dirty {
+			log.Debug().Int("pageId", pageId).Msg("Flushing page to disk")
+
 			offset := int64(pageId * (RowsPerPage * RowSize))
 			_, err := p.file.WriteAt(SerializePage(page), offset)
 			if err != nil {
@@ -89,6 +93,8 @@ func (p *Pager) GetRow(RowNum uint32) (*Row, error) {
 }
 
 func (p *Pager) readPageFromDisk(pageId uint32) *Page {
+	log.Debug().Uint32("pageId", pageId).Msg("Loading page from disk")
+
 	page := make([]byte, RowsPerPage*RowSize)
 	readBytes, err := p.file.ReadAt(page, int64(pageId*RowsPerPage*RowSize))
 	if err != nil && !errors.Is(err, io.EOF) {
