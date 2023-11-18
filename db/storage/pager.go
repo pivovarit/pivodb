@@ -12,7 +12,11 @@ import (
 const DbFileNamePrefix = ".pivodb_"
 
 const (
-	PageSize      = 4096
+	KiB = 1 << 10
+)
+
+const (
+	PageSize      = 4 * KiB
 	TableMaxPages = 100
 	RowsPerPage   = PageSize / (layout.IdSize + layout.UsernameSize + layout.EmailSize)
 	TableMaxRows  = RowsPerPage * TableMaxPages
