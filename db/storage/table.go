@@ -15,7 +15,7 @@ type Row struct {
 
 type Table struct {
 	RowCount uint32
-	Pager    *Pager
+	Pager    Pager
 }
 
 func NewPage() *Page {
